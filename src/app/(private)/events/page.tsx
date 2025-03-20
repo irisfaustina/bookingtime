@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { db } from "@/drizzle";
 import { formatEventDescription } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
 import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { CalendarPlus, CalendarRange } from "lucide-react";
@@ -65,16 +66,24 @@ function EventCard({
     isActive,
     clerkUserId}: EventCardProps){ /* only used once here so safe to create in the same page, otherwise compoenents */
     return(
-        <Card className="flex flex-col">
-            <CardHeader>
+        <Card className={cn("flex flex-col", !isActive && "border-secondary/50")}> {/* conditional classname to make border lighter when toggle is inactive */}
+            <CardHeader className={cn(!isActive && "opacity-50")}>
                 <CardTitle>{name}</CardTitle> {/* how you structures your card with info */}
-                <CardDescription>{formatEventDescription(durationInMinutes)}</CardDescription>
+                <CardDescription>
+                    {formatEventDescription(durationInMinutes)}
+                </CardDescription>
             </CardHeader>
             {description != null &&(
                 <CardContent>{description}</CardContent>
             )}
             <CardFooter className="flex justify-end gap-2 mt-auto">  
-                <CopyEventButton variant="outline" eventId={id} clerkUserId={clerkUserId}/>
+                {isActive && (
+                    <CopyEventButton 
+                        variant="outline" 
+                        eventId={id} 
+                        clerkUserId={clerkUserId}
+                    />
+                )}
                 <Button asChild>
                     <Link href={`/events/${id}/edit`}>Edit</Link>
                 </Button>
