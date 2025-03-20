@@ -10,24 +10,39 @@ import Link from "next/link" /* handles routing and redirection with useRouter *
 import { Button } from "../ui/button"
 import { Textarea } from "../ui/textarea"
 import { Switch } from "../ui/switch"
+import { createEvent } from "@/server/actions/events"
 
 export default function EventForm() {
 
     const form = useForm<z.infer<typeof eventFormSchema>>({ /* type safety */
         resolver: zodResolver(eventFormSchema), /* validation */
         defaultValues: {
+            name: "", /* default values are required for react hook form */
+            description: "",
             isActive: true,
             durationInMinutes: 30
         }
     })
 
-    function onSubmit(values: z.infer<typeof eventFormSchema>) {
-        console.log(values)
+    async function onSubmit(values: z.infer<typeof eventFormSchema>) { /* make sure form is working before calling actions */
+        const data = await createEvent(values)
+        
+        if (data.error) { /* root level error returned from server side function */
+            form.setError("root", { 
+                message: "There was an error saving your event" }) /* set error message */
+        }
     }
 
     return (
         <Form {...form}> {/* form components come from shadcn */}
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4"> {/* wrapped the entire form in type safety form declared earlier */}
+        <form onSubmit={form.handleSubmit(onSubmit)} 
+        className="space-y-4"
+        > {/* wrapped the entire form in type safety form declared earlier */}
+            {form.formState.errors.root && (
+                <div className="text-destructive text-sm">
+                    {form.formState.errors.root.message}
+                </div>
+            )}
             <FormField 
             control={form.control}
             name="name"
@@ -107,4 +122,3 @@ export default function EventForm() {
         </Form>
     )
 }
-
