@@ -9,6 +9,8 @@ import { auth } from "@clerk/nextjs/server";
 import { CalendarPlus, CalendarRange } from "lucide-react";
 import Link from "next/link";
 
+export const revalidate = 0 /* you are telling Next.js to revalidate the page data on every request. This means that instead of serving cached data, the server will always fetch fresh data from the source. */
+
 export default async function EventsPage(){
     const { userId, redirectToSignIn } = await auth()
 
@@ -74,7 +76,7 @@ function EventCard({
                 </CardDescription>
             </CardHeader>
             {description != null &&(
-                <CardContent>{description}</CardContent>
+                <CardContent className={cn(!isActive && "opacity-50")}>{description}</CardContent>
             )}
             <CardFooter className="flex justify-end gap-2 mt-auto">  
                 {isActive && (
