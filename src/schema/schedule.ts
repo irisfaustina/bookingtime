@@ -10,9 +10,9 @@ export const scheduleFormSchema = z.object({
         endTime: z.string().regex(/^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/),
         dayOfWeek: z.enum(DAYS_OF_WEEK_IN_ORDER)
     })
-).superRefine((availabilities, ctx) => {
+).superRefine((availabilities, ctx) => { /* add errors if certian conditions are not met */
     availabilities.forEach((availability, index) => {
-        const overlaps = availabilities.some((a, i) => {
+        const overlaps = availabilities.some((a, i) => { /* check for overlaps and makes sure end time is always after start imte */
             return i !== index && a.dayOfWeek === availability.dayOfWeek && 
             timeToInt(a.startTime) < timeToInt(availability.endTime) && timeToInt(a.endTime) > timeToInt(availability.startTime)
         })
