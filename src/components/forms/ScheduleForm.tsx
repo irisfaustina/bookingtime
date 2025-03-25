@@ -29,6 +29,7 @@ export default function ScheduleForm({
         availabilities: Availability[]
     }
   }) {
+    const [successMessage, setSuccessMessage] = useState<string>()
     const form = useForm<z.infer<typeof scheduleFormSchema>>({ /* type safety */
         resolver: zodResolver(scheduleFormSchema), /* validation */
         defaultValues: {
@@ -45,7 +46,10 @@ export default function ScheduleForm({
         
         if (data?.error) { /* root level error returned from server side function */
             form.setError("root", { 
-                message: "There was an error saving your schedule" }) /* set error message */
+                message: "There was an error saving your schedule" 
+            }) /* set error message */
+        } else {
+            setSuccessMessage("Schedule saved successfully!")
         }
     }
 
@@ -74,6 +78,11 @@ export default function ScheduleForm({
             {form.formState.errors.root && (
                 <div className="text-destructive text-sm">
                     {form.formState.errors.root.message}
+                </div>
+            )}
+            {successMessage && (
+                <div className="text-green-500 text-sm">
+                    {successMessage}
                 </div>
             )}
             <FormField 
@@ -150,14 +159,11 @@ export default function ScheduleForm({
                                 </Button>
                                 </div>
                                 <FormMessage>
-                                    {form.formState.errors.availabilities?.[field.index]?.root?.message}
+                                    {form.formState.errors.availabilities?.[field.index]?.message ||
+                                     form.formState.errors.availabilities?.[field.index]?.root?.message ||
+                                     form.formState.errors.availabilities?.[field.index]?.startTime?.message ||
+                                     form.formState.errors.availabilities?.[field.index]?.endTime?.message}
                                 </FormMessage>
-                                <FormMessage>
-                                    {form.formState.errors.availabilities?.[field.index]?.startTime?.message}
-                                </FormMessage>
-                                <FormMessage>
-                                    {form.formState.errors.availabilities?.[field.index]?.endTime?.message}
-                                </FormMessage>  
                                 </div>
                             ))}
                         </div>
