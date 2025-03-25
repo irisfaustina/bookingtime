@@ -1,11 +1,9 @@
-import EventForm from "@/components/forms/EventForm"
 import ScheduleForm from "@/components/forms/ScheduleForm"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from "@/drizzle"
 import { auth } from "@clerk/nextjs/server"
 
 export default async function SchedulePage() {
-
     const { userId, redirectToSignIn } = await auth() /* get user id */
     if (userId == null) return redirectToSignIn() /* redirect to sign in if not signed in */
     
@@ -17,14 +15,24 @@ export default async function SchedulePage() {
             }
         }
     }) /* get schedule when clerkuserid is equal to user id*/
-  return (
-    <Card className="max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Schedule</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScheduleForm schedule={schedule} />{/* for reusability pass schedule */}
-      </CardContent>
-    </Card>
-  )
+
+    const formattedSchedule = schedule ? {
+        timezone: schedule.timezone,
+        availabilities: schedule.availabilities.map(a => ({
+            dayOfWeek: a.dayOfWeek,
+            startTime: a.startTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+            endTime: a.endTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+        }))
+    } : undefined
+
+    return (
+        <Card className="max-w-md mx-auto">
+            <CardHeader>
+                <CardTitle>Schedule</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ScheduleForm schedule={formattedSchedule} />{/* for reusability pass schedule */}
+            </CardContent>
+        </Card>
+    )
 }

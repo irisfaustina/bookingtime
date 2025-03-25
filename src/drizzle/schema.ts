@@ -27,7 +27,7 @@ export const EventTable = pgTable("events",{
 export const ScheduleTable = pgTable("schedules",{
     id: uuid("id").primaryKey().defaultRandom(), /* unique id for each schedule */
     timezone: text("timezone").notNull(), /* convert text entry to timezone format*/
-    clerkUserId: text("clerkUserId").notNull(), /* every schedule must be tied to a registered user - user id from clerk for future proof in case you swap your auth provider */
+    clerkUserId: text("clerkUserId").notNull().unique(), /* every schedule must be tied to a registered user - user id from clerk for future proof in case you swap your auth provider */
     createdAt,
     updatedAt,
 })

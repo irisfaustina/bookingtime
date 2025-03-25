@@ -8,6 +8,13 @@
       "when": 1742068016909,
       "tag": "0000_productive_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1742860753767,
+      "tag": "0001_special_the_watchers",
+      "breakpoints": true
     }
   ]
 }

@@ -1,52 +1,71 @@
 "use client"
 
-import { useForm } from "react-hook-form" /* we're trying to use client side hook but in server side component */
+import { useFieldArray, useForm } from "react-hook-form" /* we're trying to use client side hook but in server side component */
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form"
-import { Input } from "../ui/input"
-import Link from "next/link" /* handles routing and redirection with useRouter */
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form"
 import { Button } from "../ui/button"
-import { Textarea } from "../ui/textarea"
-import { Switch } from "../ui/switch"
-import { createEvent, deleteEvent, updateEvent } from "@/server/actions/events"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
-import { useState, useTransition } from "react"
+import { Fragment, useState, useTransition } from "react"
 import { DAYS_OF_WEEK_IN_ORDER } from "@/data/constants"
 import { scheduleFormSchema } from "@/schema/schedule"
+import { timeToInt } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { formatTimezoneOffset } from "@/lib/formatters"
+import { Plus, X } from "lucide-react"
+import { Input } from "../ui/input"
+import { saveSchedule } from "@/server/actions/schedule"
 
 type Availability = {
-    startTime: Date;
-    endTime: Date;
-    dayOfWeek: typeof DAYS_OF_WEEK_IN_ORDER[number];
+    startTime: string;
+    endTime: string;
+    dayOfWeek: (typeof DAYS_OF_WEEK_IN_ORDER)[number];
 }
 
 export default function ScheduleForm({ 
-    schedule 
+    schedule,
 }: { 
     schedule?: { /* pass dynamic data from user input*/
         timezone: string;
         availabilities: Availability[]
-}
-}) {
+    }
+  }) {
     const form = useForm<z.infer<typeof scheduleFormSchema>>({ /* type safety */
         resolver: zodResolver(scheduleFormSchema), /* validation */
-        defaultValues: schedule ?? {
-            timezone: "", /* default values are required for react hook form */
-            availabilities: [],
+        defaultValues: {
+            timezone: 
+                schedule?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone, /* gives all current time zone user is in */
+            availabilities: schedule?.availabilities.toSorted((a, b) => { 
+                return timeToInt(a.startTime) - timeToInt(b.startTime)
+            }),
         }
     })
 
     async function onSubmit(values: z.infer<typeof scheduleFormSchema>) { /* make sure form is working before calling actions */
-        const action = schedule == null ? createSchedule : updateSchedule.bind(null, schedule.id) /* update server actions event based on event id */
-        const data = await action(values)
+        const data = await saveSchedule(values)
         
-        if (data.error) { /* root level error returned from server side function */
+        if (data?.error) { /* root level error returned from server side function */
             form.setError("root", { 
-                message: "There was an error saving your event" }) /* set error message */
+                message: "There was an error saving your schedule" }) /* set error message */
         }
     }
 
+    const { 
+        append: addAvailability, 
+        remove: removeAvailability, 
+        fields: availabilityFields, 
+    } = useFieldArray({
+        name: "availabilities",
+        control: form.control
+    })
+
+    const groupedAvailabilityFields = Object.groupBy(
+        availabilityFields.map((field, index) => ({ /* add index to each field */
+            ...field,
+            index
+        })),
+        availability => availability.dayOfWeek /* group by day of week */
+    ) 
+        
     return (
         <Form {...form}> {/* form components come from shadcn */}
         <form onSubmit={form.handleSubmit(onSubmit)} 
@@ -59,116 +78,96 @@ export default function ScheduleForm({
             )}
             <FormField 
             control={form.control}
-            name="name"
+            name="timezone"
             render={({field}) => (
                 <FormItem>
-                    <FormLabel>Event Name</FormLabel>
-                    <FormControl>
-                        <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                        The name users will see when booking
-                    </FormDescription>
-                    <FormMessage />
-                </FormItem>
-            )}
-            />
-            <FormField 
-            control={form.control}
-            name="durationInMinutes"
-            render={({field}) => (
-                <FormItem>
-                    <FormLabel>Duration</FormLabel>
-                    <FormControl>
-                        <Input type="number" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                        In minutes
-                    </FormDescription>
-                    <FormMessage />
-                </FormItem>
-            )}
-            />
-            <FormField 
-            control={form.control}
-            name="description"
-            render={({field}) => (
-                <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                    <Textarea className="resize-none h-32" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                        Optional description of the event
-                    </FormDescription>
-                    <FormMessage />
-                </FormItem>
-            )}
-            />
-            <FormField 
-            control={form.control}
-            name="isActive" /* already set to true returns a value store for form */
-            render={({field}) => (
-                <FormItem>
-                    <div className="flex items-center gap-2">
+                    <FormLabel>Timezone</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                            <Switch /* rendering out switch component */
-                                checked={field.value} /* set to true by default */
-                                onCheckedChange={field.onChange} /* toggle to change update the field value to false */
-                                />
+                            <SelectTrigger>{/* thing that we click on to open select box */}
+                                <SelectValue />
+                            </SelectTrigger>
                         </FormControl>
-                        <FormLabel>Active</FormLabel>
-                    </div>
-                    <FormDescription>
-                        Inactive events will not be visible for users to book
-                    </FormDescription>
+                        <SelectContent> {/* loop through timezones */}
+                            {Intl.supportedValuesOf("timeZone").map((timezone) => (
+                                <SelectItem key={timezone} value={timezone}> {/* value is the value that will be sent to the server */}
+                                    {timezone}
+                                    {` (${formatTimezoneOffset(timezone)})`}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <FormMessage />
                 </FormItem>
             )}
             />
-            <div className="flex gap-2 justify-end">
-                {event && (
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>{/* If you didn't use asChild, Radix would render its default button element as the trigger, which might not match your application's design */}
-                            <Button /* becareful linebreak can break asChild and count as a different element */
-                            variant="destructiveGhost" 
-                            disabled={isDeletePending || form.formState.isSubmitting}>
-                                Delete
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete your event.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel> {/* cancel delete action */}
-                                <AlertDialogAction 
-                                disabled={isDeletePending || form.formState.isSubmitting} /* don't allow interaction when pending */
-                                variant="destructive" /* modify alertdialog action to include variant prop */
-                                onClick={() => {
-                                    startDeleteTransition(async () => {
-                                        const data = await deleteEvent(event.id) /* delete event */
 
-                                        if (data?.error) {   /* root level error returned from server side function */
-                                            form.setError("root", { 
-                                                message: "There was an error deleting your event" }) /* set error message */
-                                        }
-                                    })
-                                }}>
-                                    Delete
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog> 
-                )}
-                <Button asChild type="button" variant="outline" disabled={form.formState.isSubmitting}>
-                    <Link href="/events">Cancel</Link>
-                </Button>
+            <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                {DAYS_OF_WEEK_IN_ORDER.map(dayOfWeek => ( /* When you map over an array and return multiple elements, React requires each element to have a unique key */
+                    <Fragment key={dayOfWeek}> {/* in this case, you're returning two div elements for each iteration. The Fragment allows you to group these elements together so that you can assign a single key to the group. */}
+                        <div className="capitalize text-sm font-semibold">{dayOfWeek.substring(0, 3)}</div>
+                        <div className="flex flex-col gap-2">
+                            <Button type="button" variant="outline" onClick={() => {
+                                addAvailability({
+                                    dayOfWeek,
+                                    startTime: "09:00",
+                                    endTime: "17:00",
+                                })
+                            }}>Add Availability<Plus className="size-4"/></Button>
+                            {groupedAvailabilityFields[dayOfWeek]?.map((field, labelIndex) => (
+                                <div className="flex flex-col gap-1" key={field.id}>
+                                <div className="flex gap-2">
+                                <FormField 
+                                control={form.control}
+                                name={`availabilities.${field.index}.startTime`}/* startTime is the name of the field */
+                                render={({field}) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input 
+                                            
+                                            aria-label={`${dayOfWeek} Start Time${labelIndex + 1}`} {...field} 
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                                />
+                                <FormField 
+                                control={form.control}
+                                name={`availabilities.${field.index}.endTime`}/* endTime is the name of the field */
+                                render={({field}) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input 
+                                            
+                                            aria-label={`${dayOfWeek} End Time${labelIndex + 1}`} {...field} 
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                                />
+                                <Button type="button" className="size-8 p-.5 flex items-center justify-center" variant="destructiveGhost" onClick={() => removeAvailability(field.index)}>
+                                    <X className="size-4" />
+                                </Button>
+                                </div>
+                                <FormMessage>
+                                    {form.formState.errors.availabilities?.[field.index]?.root?.message}
+                                </FormMessage>
+                                <FormMessage>
+                                    {form.formState.errors.availabilities?.[field.index]?.startTime?.message}
+                                </FormMessage>
+                                <FormMessage>
+                                    {form.formState.errors.availabilities?.[field.index]?.endTime?.message}
+                                </FormMessage>  
+                                </div>
+                            ))}
+                        </div>
+                    </Fragment>
+                ))}
+            </div>
+            <div className="flex gap-2 justify-end">
                 <Button type="submit" disabled={form.formState.isSubmitting}>Save</Button>
             </div>
         </form>
         </Form>
     )
+}

@@ -9,3 +9,10 @@ export function formatEventDescription(durationInMinutes: number) {
     if (minutes === 0) return hoursString /* return just the hours */
     return `${hoursString} ${minutesString}` /* otherwise return both concatenated */
   }
+
+  export function formatTimezoneOffset(timezone: string) {
+    return new Intl.DateTimeFormat(undefined, { /* It's initialized with options to specify how dates should be formatted. */
+      timeZone: timezone, /* Sets the timezone to use for formatting. This is where you pass the input timezone string. */
+      timeZoneName: "shortOffset",/* Specifies that the timezone should be displayed as a short offset (e.g., "UTC-5" instead of "Eastern Standard Time"). */
+    }).formatToParts(new Date()).find(part => part.type === "timeZoneName")?.value /* give us timezone name portion from the formatter */
+  }
