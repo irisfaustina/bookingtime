@@ -1,0 +1,60 @@
+"use server"
+
+import { db } from "@/drizzle"
+import { ScheduleAvailabilityTable, ScheduleTable } from "@/drizzle/schema"
+import { scheduleFormSchema } from "@/schema/schedule"
+import { auth } from "@clerk/nextjs/server"
+import { eq } from "drizzle-orm"
+import { BatchItem } from "drizzle-orm/batch"
+import "use-server"
+import { z } from "zod"
+
+function timeStringToDate(timeStr: string): Date {
+  const [hours, minutes] = timeStr.split(':').map(Number)
+  const date = new Date()
+  date.setHours(hours, minutes, 0, 0)
+  return date
+}
+
+export async function saveSchedule(
+  unsafeData: z.infer<typeof scheduleFormSchema>
+) {
+  const { userId } = await auth()
+  const { success, data } = scheduleFormSchema.safeParse(unsafeData)
+
+  if (!success || userId == null) {
+    return { error: true }
+  }
+
+  const { availabilities, ...scheduleData } = data
+
+  const [{ id: scheduleId }] = await db.insert(ScheduleTable)
+    .values({ ...scheduleData, clerkUserId: userId })
+    .onConflictDoUpdate({
+      target: ScheduleTable.clerkUserId,
+      set: scheduleData,
+    })
+    .returning({ id: ScheduleTable.id })
+
+  const statements: [BatchItem<"pg">] = [
+    db
+      .delete(ScheduleAvailabilityTable)
+      .where(eq(ScheduleAvailabilityTable.scheduleId, scheduleId)),
+  ]
+
+  if (availabilities.length > 0) {
+    statements.push(
+      db.insert(ScheduleAvailabilityTable).values(
+        availabilities.map(availability => ({
+          dayOfWeek: availability.dayOfWeek,
+          scheduleId,
+          startTime: timeStringToDate(availability.startTime),/* TODO */
+          endTime: timeStringToDate(availability.endTime)
+        }))
+      )
+    )
+  }
+
+  await db.batch(statements)
+  return { error: false }
+}

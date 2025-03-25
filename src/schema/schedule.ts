@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { DAYS_OF_WEEK_IN_ORDER } from "@/data/constants";
+import { timeToInt } from "@/lib/utils";
 
 export const scheduleFormSchema = z.object({
     timezone: z.string().min(1, "Required"),
@@ -20,17 +21,18 @@ export const scheduleFormSchema = z.object({
         })
         if (overlaps) {
             ctx.addIssue({
-                code: z.ZodIssueCode.custom, /* custom error code */
-                message: "Availabilities overlaps with another",
-                path: [index, "startTime"]
+                code: "custom", /* custom error code */
+                message: "Availabilities overlaps with another availability",
+                path: [index] /* whatever avail we're looping through, throw error on individual index */
+            })
+        }
+        if (timeToInt(availability.endTime) <= timeToInt(availability.startTime)) {
+            ctx.addIssue({
+                code: "custom", /* custom error code */
+                message: "End time must be after start time",
+                path: [index] /* whatever avail we're looping through, throw error on individual index */
             })
         }
     })
 })
 })
-
-function timeToInt(time: string) {
-    return parseFloat(time.replace(":", ".")) /* convert time to flaot, anything larger on the timescale will be a larger number, like 23:52 becomes 23.52 > 22.51 */
-}
-
-export type ScheduleFormValues = z.infer<typeof scheduleFormSchema>
