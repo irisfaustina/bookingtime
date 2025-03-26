@@ -125,7 +125,7 @@ export default function ScheduleForm({
                             }}>Add Availability<Plus className="size-4"/></Button>
                             {groupedAvailabilityFields[dayOfWeek]?.map((field, labelIndex) => (
                                 <div className="flex flex-col gap-1" key={field.id}>
-                                <div className="flex gap-2">
+                                <div className="flex items-center gap-2">
                                 <FormField 
                                 control={form.control}
                                 name={`availabilities.${field.index}.startTime`}/* startTime is the name of the field */
@@ -133,13 +133,13 @@ export default function ScheduleForm({
                                     <FormItem>
                                         <FormControl>
                                             <Input 
-                                            
                                             aria-label={`${dayOfWeek} Start Time${labelIndex + 1}`} {...field} 
                                             />
                                         </FormControl>
                                     </FormItem>
                                 )}
                                 />
+                                <span className="text-center">-</span>
                                 <FormField 
                                 control={form.control}
                                 name={`availabilities.${field.index}.endTime`}/* endTime is the name of the field */
@@ -147,7 +147,6 @@ export default function ScheduleForm({
                                     <FormItem>
                                         <FormControl>
                                             <Input 
-                                            
                                             aria-label={`${dayOfWeek} End Time${labelIndex + 1}`} {...field} 
                                             />
                                         </FormControl>
