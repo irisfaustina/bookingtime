@@ -1,5 +1,5 @@
 import ScheduleForm from "@/components/forms/ScheduleForm"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from "@/drizzle"
 import { auth } from "@clerk/nextjs/server"
 
@@ -29,6 +29,9 @@ export default async function SchedulePage() {
         <Card className="max-w-md mx-auto">
             <CardHeader>
                 <CardTitle>Schedule</CardTitle>
+                <CardDescription>
+                    Add or update schedule
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <ScheduleForm schedule={formattedSchedule} />{/* for reusability pass schedule */}
