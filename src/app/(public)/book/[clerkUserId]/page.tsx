@@ -7,7 +7,7 @@ import { db } from "@/drizzle"
 import { formatEventDescription } from "@/lib/formatters"
 import { cn } from "@/lib/utils"
 import { clerkClient } from "@clerk/nextjs/server"
-import { Link } from "lucide-react"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 
 export default async function BookingPage({ 
@@ -66,8 +66,8 @@ function EventCard({
                 <CardContent>{description}</CardContent>
             )}
             <CardFooter className="flex justify-end gap-2 mt-auto">  
-            <Button variant="default" className="flex items-center">
-                    <Link href={`/book/${clerkUserId}/${id}`} className="w-full h-full flex items-center justify-center">
+            <Button asChild>
+                    <Link href={`/book/${clerkUserId}/${id}`}>
                         Select
                     </Link>
                 </Button>
