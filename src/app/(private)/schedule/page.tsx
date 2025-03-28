@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { db } from "@/drizzle"
 import { auth } from "@clerk/nextjs/server"
 
+export const revalidate = 0 /* you are telling Next.js to revalidate the page data on every request. This means that instead of serving cached data, the server will always fetch fresh data from the source. */
+
 export default async function SchedulePage() {
     const { userId, redirectToSignIn } = await auth() /* get user id */
     if (userId == null) return redirectToSignIn() /* redirect to sign in if not signed in */
