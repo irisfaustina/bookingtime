@@ -1,3 +1,5 @@
+//google integration
+
 export default function BookEventPage() {
     return (
         <div>
