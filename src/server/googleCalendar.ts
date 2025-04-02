@@ -97,7 +97,7 @@ export async function createCalendarEvent({
 async function getOAuthClient(clerkUserId: string) { /* token we get back from the user */
   const token = await (await clerkClient()).users.getUserOauthAccessToken(
     clerkUserId,
-    "oauth_google"
+    "google"
   )
 
   if (token.data.length === 0 || token.data[0].token == null) { /* if token doesn't exist */
