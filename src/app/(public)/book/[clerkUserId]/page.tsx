@@ -5,16 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from "@/drizzle"
 import { formatEventDescription } from "@/lib/formatters"
-import { cn } from "@/lib/utils"
 import { clerkClient } from "@clerk/nextjs/server"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
 export default async function BookingPage({ 
-    params: { clerkUserId }
+    params
 }: { 
-    params: { clerkUserId: string } 
+    params: Promise<{ clerkUserId: string }>
 }) {
+    const { clerkUserId } = await params
     const events = await db.query.EventTable.findMany({ /* we pass db from index.ts so we can make quries here */
         where: ({ clerkUserId: userICol, isActive }, {eq, and }) => 
             and(eq(userICol, clerkUserId), eq(isActive, true)), /* getting all events for the user and make sure they're active, checks 1/userid is correct and event is active */
