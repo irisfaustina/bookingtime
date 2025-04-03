@@ -16,3 +16,28 @@ export function formatEventDescription(durationInMinutes: number) {
       timeZoneName: "shortOffset",/* Specifies that the timezone should be displayed as a short offset (e.g., "UTC-5" instead of "Eastern Standard Time"). */
     }).formatToParts(new Date()).find(part => part.type === "timeZoneName")?.value /* give us timezone name portion from the formatter */
   }
+
+  const dateFormatter = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+  })
+  
+  export function formatDate(date: Date) {
+    return dateFormatter.format(date)
+  }
+  
+  const timeFormatter = new Intl.DateTimeFormat(undefined, {
+    timeStyle: "short",
+  })
+  
+  export function formatTimeString(date: Date) {
+    return timeFormatter.format(date)
+  }
+  
+  const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  })
+  
+  export function formatDateTime(date: Date) {
+    return dateTimeFormatter.format(date)
+  }

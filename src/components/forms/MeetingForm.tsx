@@ -1,165 +1,258 @@
 "use client"
 
-import { useForm } from "react-hook-form" /* we're trying to use client side hook but in server side component */
+import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { meetingFormSchema } from "@/schema/meetings"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form"
 import { Input } from "../ui/input"
-import Link from "next/link" /* handles routing and redirection with useRouter */
+import Link from "next/link"
 import { Button } from "../ui/button"
 import { Textarea } from "../ui/textarea"
-import { Switch } from "../ui/switch"
-import { createEvent, deleteEvent, updateEvent } from "@/server/actions/events"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
-import { useState, useTransition } from "react"
+import { meetingFormSchema } from "@/schema/meetings"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select"
+import {
+  formatDate,
+  formatTimeString,
+  formatTimezoneOffset,
+} from "@/lib/formatters"
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
+import { CalendarIcon } from "lucide-react"
+import { Calendar } from "../ui/calendar"
+import { isSameDay } from "date-fns"
+import { cn } from "@/lib/utils"
+import { useMemo } from "react"
+import { toZonedTime } from "date-fns-tz"
+import { createMeeting } from "@/server/actions/meetings"
 
-export default function MeetingForm({  
-    validTimes,
-    eventId,
-    clerkUserId
-}: { 
-    validTimes: Date[] /* define type for valid times */
-    eventId: string
-    clerkUserId: string
+export function MeetingForm({
+  validTimes,
+  eventId,
+  clerkUserId,
+}: {
+  validTimes: Date[]
+  eventId: string
+  clerkUserId: string
 }) {
-    const form = useForm<z.infer<typeof meetingFormSchema>>({ /* type safety */
-        resolver: zodResolver(meetingFormSchema), /* validation */
-        defaultValues: { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }
+  const form = useForm<z.infer<typeof meetingFormSchema>>({
+    resolver: zodResolver(meetingFormSchema),
+    defaultValues: {
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    },
+  })
+
+  const timezone = form.watch("timezone")
+  const date = form.watch("date") /* any time date updates we update */
+  const validTimesInTimezone = useMemo(() => { /* convert valid times to the selected timezone */
+    return validTimes.map(date => toZonedTime(date, timezone)) 
+  }, [validTimes, timezone])
+
+  async function onSubmit(values: z.infer<typeof meetingFormSchema>) {
+    const data = await createMeeting({ /* this function is created in server/actions/meetings.ts */
+      ...values,
+      eventId,
+      clerkUserId,
     })
 
-    async function onSubmit(values: z.infer<typeof meetingFormSchema>) { /* make sure form is working before calling actions */
-        const data = await createMeeting(values)
-        
-        if (data.error) { /* root level error returned from server side function */
-            form.setError("root", { 
-                message: "There was an error saving your event" }) /* set error message */
-        }
+    if (data?.error) {
+      form.setError("root", {
+        message: "There was an error saving your event",
+      })
     }
+  }
 
-    return (
-        <Form {...form}> {/* form components come from shadcn */}
-        <form onSubmit={form.handleSubmit(onSubmit)} 
-        className="space-y-4"
-        > {/* wrapped the entire form in type safety form declared earlier */}
-            {form.formState.errors.root && (
-                <div className="text-destructive text-sm">
-                    {form.formState.errors.root.message}
-                </div>
-            )}
-            <FormField 
+  return (
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex gap-6 flex-col"
+      >
+        {form.formState.errors.root && (
+          <div className="text-destructive text-sm">
+            {form.formState.errors.root.message}
+          </div>
+        )}
+        <FormField
+          control={form.control}
+          name="timezone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Timezone</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}> {/* given a new value, update the field */}
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {Intl.supportedValuesOf("timeZone").map(timezone => (
+                    <SelectItem key={timezone} value={timezone}>
+                      {timezone}
+                      {` (${formatTimezoneOffset(timezone)})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex gap-4 flex-col md:flex-row">
+          <FormField
             control={form.control}
-            name="name"
-            render={({field}) => (
-                <FormItem>
-                    <FormLabel>Event Name</FormLabel>
+            name="date"
+            render={({ field }) => (
+              <Popover>
+                <FormItem className="flex-1">
+                  <FormLabel>Date</FormLabel>
+                  <PopoverTrigger asChild>
                     <FormControl>
-                        <Input {...field} />
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "pl-3 text-left font-normal flex w-full",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          formatDate(field.value)
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
                     </FormControl>
-                    <FormDescription>
-                        The name users will see when booking
-                    </FormDescription>
-                    <FormMessage />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar 
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange} /* when we select something, we want to update the field */
+                      disabled={date =>
+                        !validTimesInTimezone.some(time => /* check if the selected date is in the valid times */
+                          isSameDay(date, time)
+                        )
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                  <FormMessage />
                 </FormItem>
+              </Popover>
             )}
-            />
-            <FormField 
+          />
+          <FormField
             control={form.control}
-            name="durationInMinutes"
-            render={({field}) => (
-                <FormItem>
-                    <FormLabel>Duration</FormLabel>
-                    <FormControl>
-                        <Input type="number" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                        In minutes
-                    </FormDescription>
-                    <FormMessage />
-                </FormItem>
-            )}
-            />
-            <FormField 
-            control={form.control}
-            name="description"
-            render={({field}) => (
-                <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                    <Textarea className="resize-none h-32" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                        Optional description of the event
-                    </FormDescription>
-                    <FormMessage />
-                </FormItem>
-            )}
-            />
-            <FormField 
-            control={form.control}
-            name="isActive" /* already set to true returns a value store for form */
-            render={({field}) => (
-                <FormItem>
-                    <div className="flex items-center gap-2">
-                        <FormControl>
-                            <Switch /* rendering out switch component */
-                                checked={field.value} /* set to true by default */
-                                onCheckedChange={field.onChange} /* toggle to change update the field value to false */
-                                />
-                        </FormControl>
-                        <FormLabel>Active</FormLabel>
-                    </div>
-                    <FormDescription>
-                        Inactive events will not be visible for users to book
-                    </FormDescription>
-                    <FormMessage />
-                </FormItem>
-            )}
-            />
-            <div className="flex gap-2 justify-end">
-                {event && (
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>{/* If you didn't use asChild, Radix would render its default button element as the trigger, which might not match your application's design */}
-                            <Button /* becareful linebreak can break asChild and count as a different element */
-                            variant="destructiveGhost" 
-                            disabled={isDeletePending || form.formState.isSubmitting}>
-                                Delete
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete your event.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel> {/* cancel delete action */}
-                                <AlertDialogAction 
-                                disabled={isDeletePending || form.formState.isSubmitting} /* don't allow interaction when pending */
-                                variant="destructive" /* modify alertdialog action to include variant prop */
-                                onClick={() => {
-                                    startDeleteTransition(async () => {
-                                        const data = await deleteEvent(event.id) /* delete event */
+            name="startTime"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>Time</FormLabel>
+                <Select
+                  disabled={date == null || timezone == null}
+                  onValueChange={value =>
+                    field.onChange(new Date(Date.parse(value)))
+                  }
+                  defaultValue={field.value?.toString()}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          date == null || timezone == null /* place holder depends on if timezone or date is null */
+                            ? "Select a date/timezone first"
+                            : "Select a meeting time"
+                        }
+                      />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {validTimesInTimezone
+                      .filter(time => isSameDay(time, date))
+                      .map(time => (
+                        <SelectItem
+                          key={time.toISOString()}
+                          value={time.toISOString()}
+                        >
+                          {formatTimeString(time)}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
 
-                                        if (data?.error) {   /* root level error returned from server side function */
-                                            form.setError("root", { 
-                                                message: "There was an error deleting your event" }) /* set error message */
-                                        }
-                                    })
-                                }}>
-                                    Delete
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog> 
-                )}
-                <Button asChild type="button" variant="outline" disabled={form.formState.isSubmitting}>
-                    <Link href="/events">Cancel</Link>
-                </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>Save</Button>
-            </div>
-        </form>
-        </Form>
-    )
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="flex gap-4 flex-col md:flex-row">
+          <FormField
+            control={form.control}
+            name="guestName"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>Your Name</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="guestEmail"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>Your Email</FormLabel>
+                <FormControl>
+                  <Input type="email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="guestNotes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea className="resize-none" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex gap-2 justify-end">
+          <Button
+            disabled={form.formState.isSubmitting}
+            type="button"
+            asChild
+            variant="outline"
+          >
+            <Link href={`/book/${clerkUserId}`}>Cancel</Link>
+          </Button>
+          <Button disabled={form.formState.isSubmitting} type="submit">
+            Schedule
+          </Button>
+        </div>
+      </form>
+    </Form>
+  )
 }
