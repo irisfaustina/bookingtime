@@ -1,5 +1,6 @@
 //google integration
 
+import { MeetingForm } from "@/components/forms/MeetingForm"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { db } from "@/drizzle"
@@ -47,11 +48,11 @@ export default async function BookEventPage({
         )}
       </CardHeader>
       <CardContent>
-        {/* <MeetingForm
+        <MeetingForm
           validTimes={validTimes}
           eventId={event.id}
           clerkUserId={clerkUserId}
-        /> */}
+        />
       </CardContent>
     </Card>
     )
