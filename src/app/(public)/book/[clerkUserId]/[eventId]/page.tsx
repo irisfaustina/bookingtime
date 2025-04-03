@@ -32,15 +32,28 @@ export default async function BookEventPage({
         step: 15}), /* returns an array of valid dates that do not conflict with schedule and avail */
          event)
 
-    
     if (validTimes.length === 0) {
         return <NoTimeSlots event={event} calendarUser={calendarUser} />
     }
     
     return (
-        <div>
-            <h1>Book Event</h1>
-        </div>
+        <Card className="max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>
+          Book {event.name} with {calendarUser.fullName}
+        </CardTitle>
+        {event.description && (
+          <CardDescription>{event.description}</CardDescription>
+        )}
+      </CardHeader>
+      <CardContent>
+        {/* <MeetingForm
+          validTimes={validTimes}
+          eventId={event.id}
+          clerkUserId={clerkUserId}
+        /> */}
+      </CardContent>
+    </Card>
     )
 }
 
@@ -66,8 +79,8 @@ function NoTimeSlots({ /* rendering out a simple card that says no time slots ar
           or choose a shorter event.
         </CardContent>
         <CardFooter>
-          <Button variant="outline" asChild>
-            <Link href={`/book/${calendarUser.id}`} className="w-full">Choose Another Event</Link>
+          <Button asChild>
+            <Link href={`/book/${calendarUser.id}`}>Choose Another Event</Link>
           </Button>
         </CardFooter>
       </Card>
