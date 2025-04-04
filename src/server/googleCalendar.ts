@@ -44,7 +44,7 @@ export async function getCalendarEventTimes(
   )
 }
 
-export async function createCalendarEvent({
+export async function createCalendarEvent({ /* get a lot of props in */
   clerkUserId,
   guestName,
   guestEmail,
@@ -61,37 +61,37 @@ export async function createCalendarEvent({
   durationInMinutes: number
   eventName: string
 }) {
-  const oAuthClient = await getOAuthClient(clerkUserId)
-  const calendarUser = await (await clerkClient()).users.getUser(clerkUserId)
-  if (calendarUser.primaryEmailAddress == null) {
+  const oAuthClient = await getOAuthClient(clerkUserId) /* get oAuthClient */
+  const calendarUser = await (await clerkClient()).users.getUser(clerkUserId) /* get calendar user */
+  if (calendarUser.primaryEmailAddress == null) { /* make sure they have primary email address */
     throw new Error("Clerk user has no email")
   }
 
-  const calendarEvent = await google.calendar("v3").events.insert({
-    calendarId: "primary",
-    auth: oAuthClient,
-    sendUpdates: "all",
+  const calendarEvent = await google.calendar("v3").events.insert({ /* call google api to get and insert new event  */
+    calendarId: "primary", /* primary calendar */
+    auth: oAuthClient, /* verify which user is making the request */
+    sendUpdates: "all", /* send updates to all attendees, so it emails people when there's a new event*/
     requestBody: {
       attendees: [
-        { email: guestEmail, displayName: guestName },
+        { email: guestEmail, displayName: guestName }, /* guest email and name */
         {
-          email: calendarUser.primaryEmailAddress.emailAddress,
+          email: calendarUser.primaryEmailAddress.emailAddress, /* calendar user email and name */
           displayName: calendarUser.fullName,
           responseStatus: "accepted",
         },
-      ],
-      description: guestNotes ? `Additional Details: ${guestNotes}` : undefined,
+      ], /* attendees */
+      description: guestNotes ? `Additional Details: ${guestNotes}` : undefined, /* guest notes */
       start: {
         dateTime: startTime.toISOString(),
       },
       end: {
         dateTime: addMinutes(startTime, durationInMinutes).toISOString(),
       },
-      summary: `${guestName} + ${calendarUser.fullName}: ${eventName}`,
+      summary: `${guestName} + ${calendarUser.fullName}: ${eventName}`, /* event name */
     },
   })
 
-  return calendarEvent.data
+  return calendarEvent.data /* sends the response back to the caller of the createCalendarEvent function. This data includes details about the newly created event, such as its ID, start and end times, attendees, and other relevant information.*/
 }
 
 async function getOAuthClient(clerkUserId: string) { /* token we get back from the user */
