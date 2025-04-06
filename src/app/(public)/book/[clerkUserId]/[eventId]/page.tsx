@@ -10,6 +10,8 @@ import { addMonths, eachMinuteOfInterval, endOfDay, roundToNearestMinutes } from
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+export const revalidate = 0 
+
 export default async function BookEventPage({ 
     params
 }: { 

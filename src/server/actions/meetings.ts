@@ -25,14 +25,14 @@ export async function createMeeting(
   })
 
   if (event == null) return { error: true }
-  const startInTimezone = fromZonedTime(data.startTime, data.timezone)
+  const startInTimezone = fromZonedTime(data.startTime, data.timezone) /* convert start time to the selected local timezone */
 
   const validTimes = await getValidTimesFromSchedule([startInTimezone], event) /* a single date, is this date valid for this event */
   if (validTimes.length === 0) return { error: true } /* if not valid, return error */
 
   await createCalendarEvent({ /* function to create in googleCalendar, we pass on data below*/
     ...data,
-    startTime: startInTimezone,
+    startTime: startInTimezone, /* local timezone */
     durationInMinutes: event.durationInMinutes,
     eventName: event.name,
   })
