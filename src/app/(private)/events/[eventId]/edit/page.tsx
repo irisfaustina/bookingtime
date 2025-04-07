@@ -12,6 +12,7 @@ export default async function EditEventPage({
     params: Promise<{ eventId: string }> 
 }) { /* [eventId allows to take in dynamic parameters with the same name] */
     const { userId, redirectToSignIn } = await auth()
+    const { eventId } = await params
     if (userId == null) return redirectToSignIn()
 
     const event = await db.query.EventTable.findFirst({
