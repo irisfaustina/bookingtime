@@ -14,6 +14,20 @@ export default async function SuccessPage({
     params: Promise<{ clerkUserId: string, eventId: string }>
     searchParams: Promise<{ startTime: string }>
 }) {
+    if (!process.env.DATABASE_URL) {
+        return (
+            <Card className="max-w-xl mx-auto">
+                <CardHeader>
+                    <CardTitle>Configuration Error</CardTitle>
+                    <CardDescription>Database connection not configured</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    Please contact the administrator to set up the database connection.
+                </CardContent>
+            </Card>
+        )
+    }
+
     const { clerkUserId, eventId } = await params
     const event = await db.query.EventTable.findFirst({ 
         where: ({ clerkUserId: userIdCol, isActive, id }, { eq, and }) => 
