@@ -7,11 +7,9 @@ import { notFound } from "next/navigation";
 export const revalidate = 0 /* you are telling Next.js to revalidate the page data on every request. This means that instead of serving cached data, the server will always fetch fresh data from the source. */
 
 export default async function EditEventPage({ 
-    params,
-    searchParams
+    params
 }: {
-    params: Promise<{ eventId: string }>
-    searchParams?: { [key: string]: string | string[] | undefined }
+    params: Promise<{ eventId: string }> 
 }) { /* [eventId allows to take in dynamic parameters with the same name] */
     const { userId, redirectToSignIn } = await auth()
     const { eventId } = await params
