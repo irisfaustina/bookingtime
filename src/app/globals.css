@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
+@layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
