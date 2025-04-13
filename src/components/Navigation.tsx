@@ -7,7 +7,7 @@ import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
 export default function Navigation() {
   return (
-    <nav className="fixed top-0 left-0 right-0 w-full border-b bg-white/95 backdrop-blur-sm z-50 py-4 transition-all duration-300">
+    <nav className="fixed top-0 left-0 right-0 w-full border-b bg-white/95 z-50 py-4 transition-all duration-300">
       <div className="container flex items-center justify-between">
         <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
           <BsCalendar3 className="h-6 w-6 text-blue-600" />
