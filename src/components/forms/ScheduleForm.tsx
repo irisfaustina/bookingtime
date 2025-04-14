@@ -111,21 +111,27 @@ export default function ScheduleForm({
             )}
             />
 
-            <div className="grid grid-cols-2 gap-y-6 gap-x-4">
-                {DAYS_OF_WEEK_IN_ORDER.map(dayOfWeek => ( /* When you map over an array and return multiple elements, React requires each element to have a unique key */
-                    <Fragment key={dayOfWeek}> {/* in this case, you're returning two div elements for each iteration. The Fragment allows you to group these elements together so that you can assign a single key to the group. */}
+            <div className="space-y-4">
+                {DAYS_OF_WEEK_IN_ORDER.map(dayOfWeek => (
+                    <div key={dayOfWeek} className="grid grid-cols-[5rem_2.5rem_1fr] gap-4 items-start pt-1">
                         <div className="capitalize text-sm font-semibold">{dayOfWeek.substring(0, 3)}</div>
-                        <div className="flex flex-col gap-2">
-                            <Button type="button" variant="outline" onClick={() => {
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            className="w-10 p-0 flex items-center justify-center"
+                            onClick={() => {
                                 addAvailability({
                                     dayOfWeek,
                                     startTime: "09:00",
                                     endTime: "17:00",
                                 })
-                            }}>Add Availability<Plus className="size-4"/></Button>
+                            }}
+                        >
+                            <Plus className="size-4"/>
+                        </Button>
+                        <div className="flex items-center gap-4 flex-wrap min-h-[2.5rem]">
                             {groupedAvailabilityFields[dayOfWeek]?.map((field, labelIndex) => (
-                                <div className="flex flex-col gap-1" key={field.id}>
-                                <div className="flex items-center gap-2">
+                                <div key={field.id} className="flex items-center gap-2">
                                 <FormField 
                                 control={form.control}
                                 name={`availabilities.${field.index}.startTime`}/* startTime is the name of the field */
@@ -156,17 +162,16 @@ export default function ScheduleForm({
                                 <Button type="button" className="size-8 p-.5 flex items-center justify-center" variant="destructiveGhost" onClick={() => removeAvailability(field.index)}>
                                     <X className="size-4" />
                                 </Button>
-                                </div>
-                                <FormMessage>
-                                    {form.formState.errors.availabilities?.[field.index]?.message ||
-                                     form.formState.errors.availabilities?.[field.index]?.root?.message ||
-                                     form.formState.errors.availabilities?.[field.index]?.startTime?.message ||
-                                     form.formState.errors.availabilities?.[field.index]?.endTime?.message}
-                                </FormMessage>
+                                    <FormMessage className="sr-only">
+                                        {form.formState.errors.availabilities?.[field.index]?.message ||
+                                         form.formState.errors.availabilities?.[field.index]?.root?.message ||
+                                         form.formState.errors.availabilities?.[field.index]?.startTime?.message ||
+                                         form.formState.errors.availabilities?.[field.index]?.endTime?.message}
+                                    </FormMessage>
                                 </div>
                             ))}
                         </div>
-                    </Fragment>
+                    </div>
                 ))}
             </div>
             <div className="flex gap-2 justify-end">
