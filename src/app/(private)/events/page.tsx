@@ -22,7 +22,7 @@ export default async function EventsPage(){
     })
     return (
         <>
-        <div className="flex gap-4 items-baseline">
+        <div className="flex gap-4 items-baseline ">
             <h1 className="text-2xl lg:text-3xl xl:text-4xl font-semibold mb-6">Events</h1>
             <Button asChild>
                 <Link href="/events/new">
